@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+    --background: 1 0 0;
+    --foreground: 0.22 0.07 245;
+    --card: 0.22 0.07 245;
+    --card-foreground: 1 0 0;
+    --popover: 0.25 0.07 245;
+    --popover-foreground: 1 0 0;
+    --primary: 0.6 0.18 241;
+    --primary-foreground: 1 0 0;
+    --secondary: 0.62 0.16 225;
+    --secondary-foreground: 1 0 0;
+    --muted: 0.3 0.05 245;
+    --muted-foreground: 0.65 0.05 245;
+    --accent: 0.75 0.17 50;
+    --accent-foreground: 0.15 0.03 245;
+    --destructive: 0.55 0.22 25;
+    --destructive-foreground: 1 0 0;
+    --border: 0.3 0.05 245;
+    --input: 0.3 0.05 245;
+    --ring: 0.6 0.18 241;
+    --chart-1: 0.75 0.17 50;
+    --chart-2: 0.6 0.18 241;
+    --chart-3: 0.7 0.18 152;
+    --chart-4: 0.65 0.18 320;
+    --chart-5: 0.65 0.18 10;
+    --sidebar: 0.22 0.07 245;
+    --sidebar-foreground: 1 0 0;
+    --sidebar-primary: 0.6 0.18 241;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.3 0.07 245;
+    --sidebar-accent-foreground: 1 0 0;
+    --sidebar-border: 0.3 0.05 245;
+    --sidebar-ring: 0.6 0.18 241;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-tamil {
+    font-family: "Noto Sans Tamil", "Latha", sans-serif;
+  }
+
+  .game-grid-bg {
+    background-color: #0f4d2a;
+  }
+
+  .rainbow-border {
+    background: linear-gradient(
+      135deg,
+      #ff6b9d,
+      #ffa500,
+      #ffdd00,
+      #00cc88,
+      #00aaff,
+      #9966ff,
+      #ff6b9d
+    );
+    padding: 3px;
+    border-radius: 12px;
+  }
+
+  .rainbow-border-wrong {
+    background: linear-gradient(135deg, #ff2222, #ff6666, #ff2222, #ff6666);
+    padding: 3px;
+    border-radius: 12px;
+    animation: wrong-flash-border 0.3s ease-out;
+  }
+
+  @keyframes wrong-flash-border {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes target-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 6px 2px rgba(255, 165, 0, 0.9);
+      background-color: #ffd700;
+    }
+    50% {
+      box-shadow: 0 0 14px 5px rgba(255, 100, 0, 0.7);
+      background-color: #ff9500;
+    }
+  }
+
+  .food-target {
+    animation: target-pulse 0.8s ease-in-out infinite;
+  }
+}
