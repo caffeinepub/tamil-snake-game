@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // --------------- Constants ---------------
 
-const GRID_SIZE = 12;
+const GRID_SIZE = 10;
 const MAX_SPEED_INTERVAL = 900;
 const MIN_SPEED_INTERVAL = 150;
 const SPEED_STEP = 75;
@@ -436,7 +436,37 @@ function placeAllLetters(
   for (let y = 0; y < GRID_SIZE; y++)
     for (let x = 0; x < GRID_SIZE; x++)
       if (!occupied.has(`${x},${y}`)) empty.push({ x, y });
-  const chosen = shuffle(empty).slice(0, count);
+  // Spread letters evenly: each letter must be at least minDist cells from others
+  const placeSpread = (minDist: number): Position[] | null => {
+    const shuffled = shuffle(empty);
+    const placed: Position[] = [];
+    for (const pos of shuffled) {
+      const tooClose = placed.some(
+        (p) => Math.abs(p.x - pos.x) + Math.abs(p.y - pos.y) < minDist,
+      );
+      if (!tooClose) {
+        placed.push(pos);
+        if (placed.length === count) return placed;
+      }
+    }
+    return placed.length === count ? placed : null;
+  };
+  // Try decreasing minimum distances until placement succeeds
+  let chosen: Position[] = [];
+  for (const dist of [4, 3, 2, 1]) {
+    const result = placeSpread(dist);
+    if (result) {
+      chosen = result;
+      break;
+    }
+  }
+  if (chosen.length < count)
+    chosen = [
+      ...chosen,
+      ...shuffle(empty).filter(
+        (p) => !chosen.some((c) => c.x === p.x && c.y === p.y),
+      ),
+    ].slice(0, count);
   const map = new Map<string, number>();
   chosen.forEach((pos, i) => map.set(`${pos.x},${pos.y}`, i));
   return map;
@@ -510,6 +540,7 @@ export default function SnakeGame() {
     buildInitialState(0),
   );
   const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
+  const [showHint, setShowHint] = useState<boolean>(false);
 
   const stateRef = useRef<GameState>(displayState);
   const nextDirRef = useRef<Direction>("RIGHT");
@@ -827,10 +858,13 @@ export default function SnakeGame() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          /* square based on height */
+          /* square: use min of available height and width */
           height: 100%;
           aspect-ratio: 1;
+          max-height: 100%;
+          max-width: calc(100vw - 100px);
           min-width: 0;
+          overflow: hidden;
         }
 
         .rainbow-border {
@@ -847,6 +881,7 @@ export default function SnakeGame() {
           height: 100%;
           display: grid;
           grid-template-columns: repeat(${GRID_SIZE}, 1fr);
+          grid-template-rows: repeat(${GRID_SIZE}, 1fr);
           gap: 1px;
           background: #0a3d1e;
           border-radius: 8px;
@@ -854,12 +889,13 @@ export default function SnakeGame() {
         }
 
         .board-cell {
-          aspect-ratio: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
+          overflow: visible;
           position: relative;
+          min-width: 0;
+          min-height: 0;
         }
 
         /* SIDE PANEL */
@@ -1069,7 +1105,7 @@ export default function SnakeGame() {
                     let bg = isEven ? "#0F4D2A" : "#145A32";
                     if (isHead) cellClass += " snake-head";
                     else if (isBody) cellClass += " snake-body";
-                    else if (isTarget) cellClass += " food-target";
+                    else if (isTarget && showHint) cellClass += " food-target";
                     else if (isFood) cellClass += " food-other";
 
                     const displayLetter = isFood
@@ -1090,16 +1126,21 @@ export default function SnakeGame() {
                             style={{
                               fontWeight: 700,
                               lineHeight: 1,
+                              whiteSpace: "nowrap",
+                              maxWidth: "95%",
                               fontSize:
                                 displayLetter.length >= 3
-                                  ? "clamp(5px, 1.1vmin, 12px)"
-                                  : displayLetter.length === 2
-                                    ? "clamp(6px, 1.4vmin, 14px)"
-                                    : "clamp(8px, 1.8vmin, 18px)",
+                                  ? "clamp(4px, 1.1vmin, 10px)"
+                                  : displayLetter.includes("ௌ")
+                                    ? "9.5px"
+                                    : displayLetter.length === 2
+                                      ? "clamp(9px, 3.2vmin, 28px)"
+                                      : "clamp(18px, 7vmin, 60px)",
                               fontFamily: currentSet.isEnglish
                                 ? "inherit"
                                 : tamilFont,
-                              color: isTarget ? "#1a0a00" : "#c8e8ff",
+                              color:
+                                isTarget && showHint ? "#1a0a00" : "#c8e8ff",
                               userSelect: "none",
                             }}
                           >
@@ -1174,6 +1215,49 @@ export default function SnakeGame() {
                   data-ocid="game.replay.button"
                 >
                   <Volume2 size={12} /> கேள்
+                </button>
+              </div>
+
+              {/* Hint toggle */}
+              <div
+                style={{
+                  background: "#0a1f35",
+                  borderRadius: 10,
+                  padding: "6px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#60a5fa",
+                    fontSize: 9,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    fontFamily: tamilFont,
+                  }}
+                >
+                  குறிப்பு
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowHint((h) => !h)}
+                  style={{
+                    background: showHint ? "#16a34a" : "#0e2d50",
+                    color: showHint ? "#bbf7d0" : "#93c5fd",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "4px 10px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: tamilFont,
+                  }}
+                  data-ocid="game.hint.toggle"
+                >
+                  {showHint ? "மறை" : "காட்டு"}
                 </button>
               </div>
 
@@ -1546,12 +1630,12 @@ export default function SnakeGame() {
                   minWidth: 200,
                 }}
               >
-                <div style={{ fontSize: 28, marginBottom: 2 }}>🎉</div>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>
+                <div style={{ fontSize: 48, marginBottom: 6 }}>🎉</div>
+                <div style={{ fontSize: 28, fontWeight: 800 }}>
                   SERIES COMPLETE!
                 </div>
                 <div
-                  style={{ fontSize: 11, opacity: 0.9, fontFamily: tamilFont }}
+                  style={{ fontSize: 18, opacity: 0.9, fontFamily: tamilFont }}
                 >
                   {currentSet.name} — அடுத்த வரிசை வருகிறது…
                 </div>
