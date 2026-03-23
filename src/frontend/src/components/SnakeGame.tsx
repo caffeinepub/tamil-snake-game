@@ -440,11 +440,12 @@ function shuffle<T>(arr: T[]): T[] {
 function placeAllLetters(
   snake: Position[],
   count: number,
+  gridSize = GRID_SIZE,
 ): Map<string, number> {
   const occupied = new Set(snake.map((p) => `${p.x},${p.y}`));
   const empty: Position[] = [];
-  for (let y = 0; y < GRID_SIZE; y++)
-    for (let x = 0; x < GRID_SIZE; x++)
+  for (let y = 0; y < gridSize; y++)
+    for (let x = 0; x < gridSize; x++)
       if (!occupied.has(`${x},${y}`)) empty.push({ x, y });
   // Spread letters evenly: each letter must be at least minDist cells from others
   const placeSpread = (minDist: number): Position[] | null => {
@@ -523,9 +524,10 @@ function buildInitialState(
   score = 0,
   level = 1,
   speedInterval = 750,
+  gridSize = GRID_SIZE,
 ): GameState {
-  const cx = Math.floor(GRID_SIZE / 2);
-  const cy = Math.floor(GRID_SIZE / 2);
+  const cx = Math.floor(gridSize / 2);
+  const cy = Math.floor(gridSize / 2);
   const snake: Position[] = [
     { x: cx, y: cy },
     { x: cx - 1, y: cy },
@@ -533,7 +535,11 @@ function buildInitialState(
   ];
   return {
     snake,
-    foodPositions: placeAllLetters(snake, LETTER_SETS[setIndex].letters.length),
+    foodPositions: placeAllLetters(
+      snake,
+      LETTER_SETS[setIndex].letters.length,
+      gridSize,
+    ),
     direction: "RIGHT",
     status: "idle",
     score,
@@ -546,8 +552,10 @@ function buildInitialState(
 }
 
 export default function SnakeGame() {
+  const [gridSize, setGridSize] = useState<number>(12);
+  const gridSizeRef = useRef<number>(12);
   const [displayState, setDisplayState] = useState<GameState>(() =>
-    buildInitialState(0),
+    buildInitialState(0, 0, 1, 750, 12),
   );
   const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
   const [showHint, setShowHint] = useState<boolean>(false);
@@ -578,7 +586,12 @@ export default function SnakeGame() {
     else if (dir === "LEFT") nx -= 1;
     else nx += 1;
 
-    if (nx < 0 || nx >= GRID_SIZE || ny < 0 || ny >= GRID_SIZE) {
+    if (
+      nx < 0 ||
+      nx >= gridSizeRef.current ||
+      ny < 0 ||
+      ny >= gridSizeRef.current
+    ) {
       setGameOverReason("wall");
       syncState({ ...s, direction: dir, status: "gameover" });
       return;
@@ -890,8 +903,8 @@ export default function SnakeGame() {
           width: 100%;
           height: 100%;
           display: grid;
-          grid-template-columns: repeat(${GRID_SIZE}, 1fr);
-          grid-template-rows: repeat(${GRID_SIZE}, 1fr);
+          grid-template-columns: repeat(${gridSize}, 1fr);
+          grid-template-rows: repeat(${gridSize}, 1fr);
           gap: 1px;
           background: #222;
           border-radius: 8px;
@@ -1100,9 +1113,9 @@ export default function SnakeGame() {
                   onTouchEnd={handleTouchEnd}
                   data-ocid="game.canvas_target"
                 >
-                  {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
-                    const x = i % GRID_SIZE;
-                    const y = Math.floor(i / GRID_SIZE);
+                  {Array.from({ length: gridSize * gridSize }, (_, i) => {
+                    const x = i % gridSize;
+                    const y = Math.floor(i / gridSize);
                     const key = `${x},${y}`;
                     const isHead = key === snakeHeadKey;
                     const isBody = snakeBodySet.has(key);
@@ -1130,8 +1143,159 @@ export default function SnakeGame() {
                         style={{
                           background:
                             isHead || isBody || isFood ? undefined : bg,
+                          position: "relative",
+                          overflow: "visible",
                         }}
                       >
+                        {isHead && (
+                          <svg
+                            role="img"
+                            aria-label="snake head"
+                            viewBox="0 0 20 20"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              pointerEvents: "none",
+                            }}
+                          >
+                            {/* Eyes */}
+                            {s.direction === "RIGHT" && (
+                              <>
+                                <circle cx="14" cy="6" r="3" fill="white" />
+                                <circle cx="15" cy="6" r="1.5" fill="black" />
+                                <circle cx="14" cy="14" r="3" fill="white" />
+                                <circle cx="15" cy="14" r="1.5" fill="black" />
+                                {/* Tongue */}
+                                <line
+                                  x1="18"
+                                  y1="10"
+                                  x2="22"
+                                  y2="8"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="18"
+                                  y1="10"
+                                  x2="22"
+                                  y2="12"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="18"
+                                  y1="10"
+                                  x2="20"
+                                  y2="10"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.5"
+                                />
+                              </>
+                            )}
+                            {s.direction === "LEFT" && (
+                              <>
+                                <circle cx="6" cy="6" r="3" fill="white" />
+                                <circle cx="5" cy="6" r="1.5" fill="black" />
+                                <circle cx="6" cy="14" r="3" fill="white" />
+                                <circle cx="5" cy="14" r="1.5" fill="black" />
+                                {/* Tongue */}
+                                <line
+                                  x1="2"
+                                  y1="10"
+                                  x2="-2"
+                                  y2="8"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="2"
+                                  y1="10"
+                                  x2="-2"
+                                  y2="12"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="2"
+                                  y1="10"
+                                  x2="0"
+                                  y2="10"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.5"
+                                />
+                              </>
+                            )}
+                            {s.direction === "UP" && (
+                              <>
+                                <circle cx="6" cy="6" r="3" fill="white" />
+                                <circle cx="6" cy="5" r="1.5" fill="black" />
+                                <circle cx="14" cy="6" r="3" fill="white" />
+                                <circle cx="14" cy="5" r="1.5" fill="black" />
+                                {/* Tongue */}
+                                <line
+                                  x1="10"
+                                  y1="2"
+                                  x2="8"
+                                  y2="-2"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="10"
+                                  y1="2"
+                                  x2="12"
+                                  y2="-2"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="10"
+                                  y1="2"
+                                  x2="10"
+                                  y2="0"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.5"
+                                />
+                              </>
+                            )}
+                            {s.direction === "DOWN" && (
+                              <>
+                                <circle cx="6" cy="14" r="3" fill="white" />
+                                <circle cx="6" cy="15" r="1.5" fill="black" />
+                                <circle cx="14" cy="14" r="3" fill="white" />
+                                <circle cx="14" cy="15" r="1.5" fill="black" />
+                                {/* Tongue */}
+                                <line
+                                  x1="10"
+                                  y1="18"
+                                  x2="8"
+                                  y2="22"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="10"
+                                  y1="18"
+                                  x2="12"
+                                  y2="22"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.2"
+                                />
+                                <line
+                                  x1="10"
+                                  y1="18"
+                                  x2="10"
+                                  y2="20"
+                                  stroke="#e53e3e"
+                                  strokeWidth="1.5"
+                                />
+                              </>
+                            )}
+                          </svg>
+                        )}
                         {isFood && !isHead && (
                           <span
                             style={{
@@ -1341,6 +1505,61 @@ export default function SnakeGame() {
                     gap: 6,
                   }}
                 >
+                  {/* Grid Size */}
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
+                    <span
+                      style={{
+                        color: "#60a5fa",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                        fontFamily: tamilFont,
+                      }}
+                    >
+                      கட்டம்:
+                    </span>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {[10, 12, 15].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            gridSizeRef.current = size;
+                            setGridSize(size);
+                            const s = stateRef.current;
+                            const newState = buildInitialState(
+                              s.setIndex,
+                              0,
+                              1,
+                              s.speedInterval,
+                              size,
+                            );
+                            syncState(newState);
+                            nextDirRef.current = "RIGHT";
+                            setGameOverReason(null);
+                          }}
+                          style={{
+                            background:
+                              gridSize === size ? "#16a34a" : "#0a1f35",
+                            color: gridSize === size ? "#fff" : "#94a3b8",
+                            border: "none",
+                            borderRadius: 6,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            padding: "3px 6px",
+                          }}
+                          data-ocid="game.grid_size.button"
+                        >
+                          {size}×{size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Speed */}
                   <div
                     style={{ display: "flex", flexDirection: "column", gap: 4 }}
