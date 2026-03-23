@@ -13,10 +13,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // --------------- Constants ---------------
 
-const GRID_SIZE = 10;
-const MAX_SPEED_INTERVAL = 900;
+const GRID_SIZE = 12;
+const MAX_SPEED_INTERVAL = 2400;
 const MIN_SPEED_INTERVAL = 150;
-const SPEED_STEP = 75;
+
+const SPEED_PRESETS = [
+  { label: "மிக மிக மெதுவு", interval: 2400 },
+  { label: "மிகவும் மெதுவு", interval: 1600 },
+  { label: "மிக மெதுவு", interval: 900 },
+  { label: "மெதுவு", interval: 700 },
+  { label: "சாதாரண", interval: 500 },
+  { label: "வேகம்", interval: 300 },
+  { label: "மிக வேகம்", interval: 150 },
+];
+const _SPEED_STEP = 75;
 const SPEED_DECREASE_STEP = 20;
 const SCORE_PER_LETTER = 10;
 const MEI_SERIES_COUNT = 18;
@@ -753,7 +763,7 @@ export default function SnakeGame() {
     [syncState],
   );
 
-  const handleSpeedChange = useCallback(
+  const _handleSpeedChange = useCallback(
     (delta: number) => {
       const s = stateRef.current;
       const newInterval = Math.min(
@@ -883,12 +893,13 @@ export default function SnakeGame() {
           grid-template-columns: repeat(${GRID_SIZE}, 1fr);
           grid-template-rows: repeat(${GRID_SIZE}, 1fr);
           gap: 1px;
-          background: #0a3d1e;
+          background: #222;
           border-radius: 8px;
           overflow: hidden;
         }
 
         .board-cell {
+          background: #000;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -936,7 +947,7 @@ export default function SnakeGame() {
           100% { border-color: #ec4899; }
         }
 
-        .food-other  { background: #2a4a6a !important; }
+        .food-other  { background: #1a1a1a !important; }
         .food-target { background: #ff8c00 !important; }
         .snake-head  { background: #88ff99 !important; border-radius: 3px; }
         .snake-body  { background: #33cc55 !important; border-radius: 3px; }
@@ -1128,14 +1139,7 @@ export default function SnakeGame() {
                               lineHeight: 1,
                               whiteSpace: "nowrap",
                               maxWidth: "95%",
-                              fontSize:
-                                displayLetter.length >= 3
-                                  ? "clamp(4px, 1.1vmin, 10px)"
-                                  : displayLetter.includes("ௌ")
-                                    ? "9.5px"
-                                    : displayLetter.length === 2
-                                      ? "clamp(9px, 3.2vmin, 28px)"
-                                      : "clamp(18px, 7vmin, 60px)",
+                              fontSize: "clamp(8px, 2vmin, 16px)",
                               fontFamily: currentSet.isEnglish
                                 ? "inherit"
                                 : tamilFont,
@@ -1328,7 +1332,7 @@ export default function SnakeGame() {
                   </button>
                 </div>
 
-                {/* Speed + buttons */}
+                {/* Speed preset buttons */}
                 <div
                   style={{
                     flex: 1,
@@ -1339,7 +1343,7 @@ export default function SnakeGame() {
                 >
                   {/* Speed */}
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
                   >
                     <span
                       style={{
@@ -1351,52 +1355,42 @@ export default function SnakeGame() {
                         fontFamily: tamilFont,
                       }}
                     >
-                      வேகம்
+                      வேகம்:
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleSpeedChange(+SPEED_STEP)}
-                      style={{
-                        background: "#0a1f35",
-                        color: "#94a3b8",
-                        border: "none",
-                        borderRadius: 8,
-                        width: 34,
-                        height: 34,
-                        fontSize: 20,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      data-ocid="game.speed.button.1"
-                      title="Slower"
-                    >
-                      −
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSpeedChange(-SPEED_STEP)}
-                      style={{
-                        background: "#0a1f35",
-                        color: "#94a3b8",
-                        border: "none",
-                        borderRadius: 8,
-                        width: 34,
-                        height: 34,
-                        fontSize: 20,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      data-ocid="game.speed.button.2"
-                      title="Faster"
-                    >
-                      +
-                    </button>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {SPEED_PRESETS.map((preset) => (
+                        <button
+                          key={preset.interval}
+                          type="button"
+                          onClick={() =>
+                            syncState({
+                              ...stateRef.current,
+                              speedInterval: preset.interval,
+                            })
+                          }
+                          style={{
+                            background:
+                              displayState.speedInterval === preset.interval
+                                ? "#1E88E5"
+                                : "#0a1f35",
+                            color:
+                              displayState.speedInterval === preset.interval
+                                ? "#fff"
+                                : "#94a3b8",
+                            border: "none",
+                            borderRadius: 6,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            padding: "3px 4px",
+                            fontFamily: tamilFont,
+                          }}
+                          data-ocid="game.speed.button"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Action buttons */}
