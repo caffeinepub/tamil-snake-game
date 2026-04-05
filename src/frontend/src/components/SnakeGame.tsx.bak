@@ -653,18 +653,10 @@ export default function SnakeGame() {
         : s.targetLetterIndex;
     const isCorrectFood = isAnyFood && foodLetterIdx === currentTargetLetterIdx;
 
-    // In 1D mode: wrong letter = game over
-    // In 2D mode: wrong letter = pass through (snake does not die)
-    if (s.gameMode === "1D" && isAnyFood && !isCorrectFood) {
+    // Both 1D and 2D modes: wrong letter = game over
+    if (isAnyFood && !isCorrectFood) {
       setGameOverReason("wrong");
       syncState({ ...s, direction: dir, status: "gameover" });
-      return;
-    }
-
-    // In 2D mode, if snake hits an inactive food cell, just pass through (no grow, no die)
-    if (s.gameMode === "2D" && isAnyFood && !isCorrectFood) {
-      const newSnakeSkip = [newHead, ...s.snake.slice(0, -1)];
-      syncState({ ...s, snake: newSnakeSkip, direction: dir });
       return;
     }
 
@@ -1540,33 +1532,35 @@ export default function SnakeGame() {
                             )}
                           </svg>
                         )}
-                        {isFood && !isHead && (
+                        {isFood && !isHead && s.gameMode !== "2D" && (
                           <span
                             style={{
                               fontWeight: 700,
                               lineHeight: 1,
                               whiteSpace: "nowrap",
                               maxWidth: "95%",
-                              fontSize: isActiveFood2D
-                                ? "clamp(12px, 3.5vmin, 22px)"
-                                : "clamp(8px, 2vmin, 16px)",
+                              fontSize: "clamp(8px, 2vmin, 16px)",
                               fontFamily: currentSet.isEnglish
                                 ? "inherit"
                                 : tamilFont,
-                              color: isActiveFood2D
-                                ? "#ffffff"
-                                : isInactiveFood2D
-                                  ? "#555"
-                                  : isTarget && showHint
-                                    ? "#1a0a00"
-                                    : "#c8e8ff",
-                              textShadow: isActiveFood2D
-                                ? "0 0 6px rgba(255,255,255,0.9)"
-                                : "none",
+                              color:
+                                isTarget && showHint ? "#1a0a00" : "#c8e8ff",
                               userSelect: "none",
                             }}
                           >
                             {displayLetter}
+                          </span>
+                        )}
+                        {isFood && !isHead && s.gameMode === "2D" && (
+                          <span
+                            style={{
+                              fontSize: "clamp(10px, 2.5vmin, 18px)",
+                              userSelect: "none",
+                              opacity: isActiveFood2D ? 1 : 0.5,
+                              filter: isActiveFood2D ? "none" : "blur(2px)",
+                            }}
+                          >
+                            {"?"}
                           </span>
                         )}
                       </div>

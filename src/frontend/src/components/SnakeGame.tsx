@@ -965,10 +965,6 @@ export default function SnakeGame() {
   const snakeBodySet = new Set(s.snake.slice(1).map((p) => `${p.x},${p.y}`));
   const nextSeriesIndex = (s.setIndex + 1) % LETTER_SETS.length;
 
-  // 2D mode: determine which food cell is active (glowing) vs inactive (dim)
-  const activeFoodIdx2D =
-    s.gameMode === "2D" ? (s.eatOrder?.[s.targetLetterIndex] ?? -1) : -1;
-
   return (
     <>
       <style>{`
@@ -1117,21 +1113,8 @@ export default function SnakeGame() {
         .snake-head  { background: #88ff99 !important; border-radius: 3px; }
         .snake-body  { background: #33cc55 !important; border-radius: 3px; }
 
-        /* 2D mode: inactive food cells are dim */
-        .food-2d-inactive { background: #1a1a1a !important; opacity: 0.7; }
-
-        /* 2D mode: active food cell is bright and prominent */
-        .food-2d-active {
-          background: #ff6600 !important;
-          box-shadow: 0 0 8px 3px rgba(255, 140, 0, 0.8);
-          animation: pulse-2d 1.2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-2d {
-          0%   { box-shadow: 0 0 6px 2px rgba(255, 140, 0, 0.7); }
-          50%  { box-shadow: 0 0 14px 6px rgba(255, 200, 0, 1.0); }
-          100% { box-shadow: 0 0 6px 2px rgba(255, 140, 0, 0.7); }
-        }
+        /* 2D mode: all food cells look identical - no visual hint which is active */
+        .food-2d-cell { background: #1a1a1a !important; }
 
         /* 2D mode: center cell subtle indicator (where next letter will appear) */
         .center-indicator {
@@ -1352,19 +1335,12 @@ export default function SnakeGame() {
                     const isTarget =
                       isFood && foodLetterIdx === s.targetLetterIndex;
                     const isEven = (x + y) % 2 === 0;
-                    const isActiveFood2D =
-                      s.gameMode === "2D" &&
-                      isFood &&
-                      foodLetterIdx === activeFoodIdx2D;
-                    const isInactiveFood2D =
-                      s.gameMode === "2D" && isFood && !isActiveFood2D;
-
                     let cellClass = "board-cell";
                     let bg = isEven ? "#0F4D2A" : "#145A32";
                     if (isHead) cellClass += " snake-head";
                     else if (isBody) cellClass += " snake-body";
-                    else if (isActiveFood2D) cellClass += " food-2d-active";
-                    else if (isInactiveFood2D) cellClass += " food-2d-inactive";
+                    else if (s.gameMode === "2D" && isFood)
+                      cellClass += " food-2d-cell";
                     else if (isTarget && showHint) cellClass += " food-target";
                     else if (isFood) cellClass += " food-other";
 
@@ -1556,8 +1532,9 @@ export default function SnakeGame() {
                             style={{
                               fontSize: "clamp(10px, 2.5vmin, 18px)",
                               userSelect: "none",
-                              opacity: isActiveFood2D ? 1 : 0.5,
-                              filter: isActiveFood2D ? "none" : "blur(2px)",
+                              opacity: 1,
+                              color: "#c8e8ff",
+                              fontWeight: 700,
                             }}
                           >
                             {"?"}
